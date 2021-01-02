@@ -1,206 +1,143 @@
-   const AppError = require('./../utils/appError');
+const AppError = require('./../utils/appError');
 
+const { MSG, STATUS } = require('../shared/constants/responseConstants');
 
-   //handling invalid DB id's
-   const handleCastErrorDB = err =>
+//handling invalid DB id's
+const handleCastErrorDB = (err) => {
+  const message = `Invalid ${err.path} : ${err.value}`;
 
-   {
-       const message = `Invalid ${err.path} : ${err.value}`;
-       
-       return new AppError(message , 400);
-   }
+  return new AppError(message, STATUS.BAD_REQUEST);
+};
 
-   const handleDuplicateFieldDB = err =>
+const handleDuplicateFieldDB = (err) => {
+  const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
 
-   {
-       const value =  err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
+  const message = `Duplicate Field Value: ${value} Please Use Another Value`;
 
-       const message = `Duplicate Field Value: ${value} Please Use Another Value`;
+  return new AppError(message, STATUS.BAD_REQUEST);
+};
 
-       return new AppError(message , 400);
-   }
+const handleValidationErrorDB = (err) => {
+  const value = Object.values(err.errors)
+    .map((el) => el.message)
+    .join('. ');
 
-   const handleValidationErrorDB = err => 
+  const message = `Invalid Input Field. ${value}`;
 
-   {
-       const value = Object.values(err.errors).map(el => el.message).join('. ');
+  return new AppError(message, STATUS.BAD_REQUEST);
+};
 
-       const message = `Invalid Input Field. ${value}`;
+const handleJWTError = () =>
+  new AppError('Invalid Token. Please Log In Again', STATUS.UNAUTHORIZED);
 
-       return new AppError(message , 400);
-   }
+const handleJWTExpiredError = () =>
+  new AppError(
+    'Your Token Has Expired! PLease Log In Again',
+    STATUS.UNAUTHORIZED
+  );
 
-   const handleJWTError = () => new AppError('Invalid Token. Please Log In Again' , 401)
+//handling our errors with a central middleware
 
-   const handleJWTExpiredError = () => new AppError('Your Token Has Expired! PLease Log In Again' , 401)
-   
-   //handling our errors with a central middleware
+const sendErrorDev = (err, req, res) => {
+  if (req.originalUrl.startsWith('/api')) {
+    return res.status(err.statusCode).json({
+      status: err.status,
 
-    const sendErrorDev = (err , req , res) =>
+      error: err,
 
-    {
+      message: err.message,
 
-        if(req.originalUrl.startsWith('/api'))
+      stack: err.stack,
+    });
+  }
 
-        {
-           return res.status(err.statusCode).json({
-
-
-                status : err.status,
-    
-                error: err,
-    
-                message: err.message,
-    
-                stack: err.stack
-    
-    
-            });
-        }
-
-        return res.status(err.statusCode).render('error' , 
-        
-        {
-
-            title: 'Something Went Wrong',
-
-            msg: err.message
-
-        })
-
-    }
-
-    const sendErrorProd = (err , req ,  res) =>
+  return res.status(err.statusCode).render(
+    'error',
 
     {
+      title: 'Something Went Wrong',
 
-        if(req.originalUrl.startsWith('/api'))
+      msg: err.message,
+    }
+  );
+};
 
-        {
-            if(err.isOperational)
+const sendErrorProd = (err, req, res) => {
+  if (req.originalUrl.startsWith('/api')) {
+    if (err.isOperational) {
+      return res.status(err.statusCode).json({
+        status: err.status,
 
-            {
-                return res.status(err.statusCode).json({
+        message: err.message,
+      });
+    } else {
+      console.error('Error', err);
 
+      return res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+        status: 'error',
 
-                    status : err.status,
-        
-                    message: err.message,
-        
-        
-                });
-            }
+        message: 'Something Went Very Wrong',
+      });
+    }
+  }
 
-            else
+  if (err.isOperational) {
+    return res.status(err.statusCode).render(
+      'error',
 
-            {
+      {
+        title: 'Something Went Wrong',
 
-                console.error('Error' , err);
+        msg: err.message,
+      }
+    );
+  } else {
+    return res.status(err.statusCode).render(
+      'error',
 
+      {
+        title: 'Something Went Wrong',
 
-                return res.status(500).json({
+        msg: 'Please Try Again Later!!!',
+      }
+    );
+  }
+};
 
-                    status: 'error',
+module.exports = (err, req, res, next) => {
+  err.statusCode = err.statusCode || 500;
 
-                    message: 'Something Went Very Wrong'
+  err.status = err.status || 'error';
 
-                })
-            }
+  if (process.env.NODE_ENV === 'development') {
+    sendErrorDev(err, req, res);
+  } else if (process.env.NODE_ENV === 'production') {
+    let error = { ...err };
 
-        }
+    error.message = err.message;
 
-        if(err.isOperational)
-
-        {
-            return res.status(err.statusCode).render('error',
-            
-            {
-
-                title: 'Something Went Wrong',
-
-                msg: err.message
-
-            })
-        }
-
-        else
-
-        {
-            return res.status(err.statusCode).render('error' ,
-            
-            {
-
-                title: 'Something Went Wrong',
-
-                msg: 'Please Try Again Later!!!'
-
-            });
-        }
-
-        
+    if (error.name === 'CastError') {
+      error = handleCastErrorDB(error);
     }
 
-    module.exports = (err , req , res , next) => {
-
-
-
-        err.statusCode = err.statusCode ||  500;
-
-        err.status = err.status || 'error';
-
-      
-        if(process.env.NODE_ENV === 'development')
-
-        {
-            sendErrorDev(err , req , res)
-        }
-
-        else
-
-        if(process.env.NODE_ENV === 'production')
-
-        {
-
-            let error = {...err};
-
-            error.message = err.message
-
-            if(error.name === 'CastError')
-
-            {
-                error = handleCastErrorDB(error);
-            }
-
-            if(error.code === 11000)
-
-            {
-                error = handleDuplicateFieldDB(error);
-            }
-
-            if (error.name === 'ValidationError')
-
-            {
-                error = handleValidationErrorDB(error);
-            }
-
-            if(error.name === 'JsonWebTokenError')
-
-            {
-                error = handleJWTError(error)
-            }
-
-            if(error.name === 'TokenExpiredError')
-
-            {
-                error = handleJWTExpiredError();
-            }
-
-            sendErrorProd(error , req , res)
-
-        }
-
-
-        next();
-
-
+    if (error.code === 11000) {
+      error = handleDuplicateFieldDB(error);
     }
+
+    if (error.name === 'ValidationError') {
+      error = handleValidationErrorDB(error);
+    }
+
+    if (error.name === 'JsonWebTokenError') {
+      error = handleJWTError(error);
+    }
+
+    if (error.name === 'TokenExpiredError') {
+      error = handleJWTExpiredError();
+    }
+
+    sendErrorProd(error, req, res);
+  }
+
+  next();
+};

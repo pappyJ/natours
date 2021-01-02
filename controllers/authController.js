@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 
 const crypto = require('crypto');
 
+const { MSG, STATUS } = require('../shared/constants/responseConstants');
+
 const User = require('./../Models/userModel');
 
 const AppError = require('./../utils/appError');
@@ -84,7 +86,7 @@ exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return next(new AppError('Invalid Email Or Password', 401));
+    return next(new AppError('Invalid Email Or Password', STATUS.UNAUTHORIZED));
   }
 
   const user = await User.findOne({ email }).select('+password');
@@ -94,14 +96,14 @@ exports.login = catchAsync(async (req, res, next) => {
     !user ||
     !(await user.correctPassword(password, user.password))
   ) {
-    return next(new AppError('Invalid Email Or Password', 401));
+    return next(new AppError('Invalid Email Or Password', STATUS.UNAUTHORIZED));
   }
 
   if (!(await user.checkLogin())) {
     return next(
       new AppError(
         'Login Chances Exceeded , Try Again In The Next 24 Hours',
-        401
+        STATUS.UNAUTHORIZED
       )
     );
   }
@@ -116,7 +118,7 @@ exports.login = catchAsync(async (req, res, next) => {
 
   // })
 
-  createSendToken(user, 200, res);
+  createSendToken(user, STATUS.OK, res);
 });
 
 exports.logout = async (req, res, next) => {
@@ -148,7 +150,10 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   if (!token) {
     return next(
-      new AppError('You Are Not Logged In ! Please Log In To Get Access!', 401)
+      new AppError(
+        'You Are Not Logged In ! Please Log In To Get Access!',
+        STATUS.UNAUTHORIZED
+      )
     );
   }
 
@@ -160,7 +165,10 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   if (!currentUser) {
     return next(
-      new AppError('The User Belonging To This Token No Longer Exist!', 401)
+      new AppError(
+        'The User Belonging To This Token No Longer Exist!',
+        STATUS.UNAUTHORIZED
+      )
     );
   }
 
@@ -168,7 +176,10 @@ exports.protect = catchAsync(async (req, res, next) => {
 
   if (passwordCheck) {
     return next(
-      new AppError('User Recently Changed Password ! Please Log In Again', 401)
+      new AppError(
+        'User Recently Changed Password ! Please Log In Again',
+        STATUS.UNAUTHORIZED
+      )
     );
   }
 
@@ -264,8 +275,8 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
     // });
 
-    res.status(200).json({
-      status: 'success',
+    res.status(STATUS.OK).json({
+      status: MSG.SUCCESS,
 
       message: 'Your Email Has Been Sent',
     });
@@ -281,7 +292,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
     return next(
       new AppError(
         'There Was An Error Sending The Email , Try Again Later',
-        500
+        STATUS.INTERNAL_SERVER_ERROR
       )
     );
   }
@@ -315,7 +326,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
 
   await user.save();
 
-  createSendToken(user, 200, res);
+  createSendToken(user, STATUS.OK, res);
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
@@ -329,7 +340,9 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
     !user ||
     !(await user.correctPassword(req.body.Oldpassword, user.password))
   ) {
-    return next(new AppError('Your Current Password Is Wrong', 401));
+    return next(
+      new AppError('Your Current Password Is Wrong', STATUS.UNAUTHORIZED)
+    );
   }
 
   user.password = req.body.password;
@@ -338,5 +351,5 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 
   await user.save();
 
-  createSendToken(user, 200, res);
+  createSendToken(user, STATUS.OK, res);
 });

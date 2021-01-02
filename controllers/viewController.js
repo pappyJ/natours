@@ -4,12 +4,14 @@ const Tour = require('./../Models/tourModel');
 
 const User = require('./../Models/userModel');
 
+const { MSG, STATUS } = require('../shared/constants/responseConstants');
+
 const catchAsync = require('./../utils/catchAsync');
 
 exports.getOverview = catchAsync(async (req, res, next) => {
   const tours = await Tour.find();
 
-  res.status(200).render(
+  res.status(STATUS.OK).render(
     'overview',
 
     {
@@ -28,10 +30,12 @@ exports.getTour = catchAsync(async (req, res, next) => {
   });
 
   if (!tour) {
-    return next(new AppError('There Is No Tour With That Name', 404));
+    return next(
+      new AppError('There Is No Tour With That Name', STATUS.NOT_FOUND)
+    );
   }
 
-  res.status(200).render(
+  res.status(STATUS.OK).render(
     'tour',
 
     {
@@ -43,13 +47,13 @@ exports.getTour = catchAsync(async (req, res, next) => {
 });
 
 exports.login = (req, res) => {
-  res.status(200).render('login', {
+  res.status(STATUS.OK).render('login', {
     title: 'Natours Login',
   });
 };
 
 exports.getAccount = (req, res) => {
-  res.status(200).render(
+  res.status(STATUS.OK).render(
     'account',
 
     {
@@ -74,7 +78,7 @@ exports.updateUserData = async (req, res, next) => {
     }
   );
 
-  res.status(200).render(
+  res.status(STATUS.OK).render(
     'account',
 
     {
@@ -86,7 +90,7 @@ exports.updateUserData = async (req, res, next) => {
 };
 
 exports.signUp = catchAsync(async (req, res, next) => {
-  res.status(200).render('signUp', {
+  res.status(STATUS.OK).render('signUp', {
     title: 'Natours signUp',
   });
 });

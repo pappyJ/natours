@@ -6,6 +6,8 @@ const AppError = require('./../utils/appError.js');
 
 const factory = require('./factoryHandler');
 
+const { MSG, STATUS } = require('../shared/constants/responseConstants');
+
 const multer = require('multer');
 
 const sharp = require('sharp');
@@ -36,7 +38,13 @@ const multerFilter = (req, file, cb) => {
   if (file.mimetype.startsWith('image')) {
     cb(null, true);
   } else {
-    cb(new AppError('Not An Image ! Please Upload Only Images', 400), false);
+    cb(
+      new AppError(
+        'Not An Image ! Please Upload Only Images',
+        STATUS.BAD_REQUEST
+      ),
+      false
+    );
   }
 };
 
@@ -110,8 +118,8 @@ const filterRequest = (obj, ...valid) => {
 // }
 
 exports.createUser = (req, res) => {
-  res.status(500).json({
-    status: 'error',
+  res.status(STATUS.INTERNAL_SERVER_ERROR).json({
+    status: MSG.ERROR,
 
     message: 'This Route Is Not Yet Defined Use /SignUp Instead',
   });
@@ -132,7 +140,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     return next(
       new AppError(
         'This Route Is Not For Password Updates . Please Use /updatePassword',
-        400
+        STATUS.BAD_REQUEST
       )
     );
   }
@@ -153,7 +161,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     }
   );
 
-  res.status(200).json({
+  res.status(STATUS.OK).json({
     status: 'success',
 
     data: {
@@ -165,8 +173,8 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 exports.deleteMe = catchAsync(async (req, res) => {
   await User.findByIdAndUpdate(req.user.id, { active: false });
 
-  res.status(204).json({
-    status: 'Success',
+  res.status(STATUS.NO_CONTENT).json({
+    status: MSG.SUCCESS,
 
     data: null,
   });

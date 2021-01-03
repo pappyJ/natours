@@ -24,6 +24,10 @@ const mongoose = require('mongoose');
 
 mongoose
   .connect(process.env.DATABASE_LOCAL, {
+    user: process.env.DOCKER_MONGO_USERNAME,
+
+    pass: process.env.DOCKER_MONGO_PASSWORD,
+
     useNewUrlParser: true,
 
     useCreateIndex: true,
@@ -32,7 +36,8 @@ mongoose
 
     useFindAndModify: false,
   })
-  .then(() => console.log('Database Connected Successfullly'));
+  .then(() => console.log('Database Connected Successfully'))
+  .catch(console.log);
 
 //creating the variable for the port
 

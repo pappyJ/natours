@@ -8,7 +8,8 @@
     "debug": "ndb server.js",
     "start:prod": "NODE_ENV=production nodemon server.js",
     "watch:js": "parcel watch ./public/js/index.js --out-dir ./public/js --out-file ./public/js/bundle.js",
-    "build:js": "parcel watch ./public/js/index.js --out-dir ./public/js --out-file ./public/js/bundle.js"
+    "build:js": "parcel watch ./public/js/index.js --out-dir ./public/js --out-file ./public/js/bundle.js",
+    "start:docker": "docker-compose up"
   },
   "author": "Peter Joshua",
   "license": "ISC",

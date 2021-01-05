@@ -54,8 +54,8 @@ To Rapid Developement Use An Api Client eg:
 
 [Postman](https://www.postman.com/)
 
+```
 Todo:Api Documentation
+```
 
-```
 For Local MongoDB usage remove the `user` and `pass` options in `server.js` and change the connection URI `DATABASE_LOCAL_DOCKER` to `DATABASE_LOCAL`
-```

@@ -23,7 +23,7 @@ process.on('uncaughtException', (err) => {
 const mongoose = require('mongoose');
 
 mongoose
-  .connect(process.env.DATABASE_LOCAL, {
+  .connect(process.env.DATABASE_LOCAL_DOCKER, {
     user: process.env.DOCKER_MONGO_USERNAME,
 
     pass: process.env.DOCKER_MONGO_PASSWORD,
